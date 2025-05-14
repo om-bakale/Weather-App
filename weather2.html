@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather App</title>
+  <style>
+    /* Page styling */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #e6f7ff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* Centered container box */
+    .container {
+      text-align: center;
+      background-color: #ffffff;
+      border-radius: 15px;
+      padding: 40px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 450px;
+    }
+
+    /* Header */
+    h1 {
+      font-size: 3em;
+      margin-bottom: 20px;
+    }
+
+    /* Text input style */
+    input[type="text"] {
+      padding: 15px;
+      width: 80%;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      font-size: 1.2em;
+    }
+
+    /* Button style */
+    button {
+      padding: 15px;
+      width: 85%;
+      background-color: #494eea;
+      color: white;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    /* Button hover effect */
+    button:hover {
+      background-color: #3a3cd0;
+    }
+
+    /* Weather result display */
+    #weather {
+      font-size: 1.2em;
+      margin-top: 20px;
+    }
+
+    /* Error message style */
+    .error {
+      color: red;
+      font-size: 1.1em;
+    }
+
+    /* Emoji size */
+    .emoji {
+      font-size: 3em;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Weather App Container -->
+  <div class="container">
+    <h1>Weather App🌦️</h1>
+
+    <!-- City name input -->
+    <input type="text" id="city" placeholder="Enter city name" autofocus />
+
+    <!-- Button to fetch weather -->
+    <button onclick="getWeather()">Get Weather</button>
+
+    <!-- Display area for weather and errors -->
+    <div id="weather"></div>
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    // Your OpenWeatherMap API Key
+    const apiKey = '62717c67954e3b5b98f91f054f4d67a9';
+
+    // On page load, get the last searched city from localStorage
+    window.onload = () => {
+      const lastCity = localStorage.getItem('lastCity');
+      if (lastCity) {
+        document.getElementById('city').value = lastCity;
+        getWeather(); // Automatically fetch weather for last city
+      }
+    };
+
+    // Allow "Enter" key to trigger weather search
+    document.getElementById('city').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') {
+        getWeather();
+      }
+    });
+
+    // Main function to fetch and display weather data
+    async function getWeather() {
+      const cityInput = document.getElementById('city');
+      const city = cityInput.value.trim(); // Get city input
+      const weatherDiv = document.getElementById('weather');
+      const errorDiv = document.getElementById('error');
+
+      // Clear previous results
+      weatherDiv.innerHTML = '';
+      errorDiv.textContent = '';
+
+      // If no city entered, show error
+      if (!city) {
+        errorDiv.textContent = "🌍 Please enter a city name.";
+        return;
+      }
+
+      // Show loading message
+      weatherDiv.innerHTML = "⏳ Loading...";
+
+      try {
+        // Save last searched city to localStorage
+        localStorage.setItem('lastCity', city);
+
+        // Fetch weather data from OpenWeatherMap API
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
+        );
+
+        // If response is not OK, throw an error
+        if (!response.ok) {
+          throw new Error("❌ City not found or API error");
+        }
+
+        const data = await response.json(); // Parse JSON
+
+        // Extract weather details
+        const temperature = data.main.temp;
+        const description = data.weather[0].description;
+        const humidity = data.main.humidity;
+        const windSpeed = data.wind.speed;
+        const icon = data.weather[0].icon;
+
+        // Choose an emoji based on description
+        let weatherEmoji = "🌤️";
+        if (description.includes("rain")) weatherEmoji = "🌧️";
+        else if (description.includes("clear")) weatherEmoji = "☀️";
+        else if (description.includes("cloud")) weatherEmoji = "☁️";
+        else if (description.includes("snow")) weatherEmoji = "❄️";
+        else if (description.includes("storm") || description.includes("thunder")) weatherEmoji = "🌩️";
+
+        // Display weather data in the page
+        weatherDiv.innerHTML = `
+          <h3>${city} ${weatherEmoji}</h3>
+          <img src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="Weather icon" />
+          <p><strong>🌡️ Temperature:</strong> ${temperature}°C</p>
+          <p><strong>🔍 Description:</strong> ${description}</p>
+          <p><strong>💧 Humidity:</strong> ${humidity}%</p>
+          <p><strong>🌬️ Wind:</strong> ${windSpeed} m/s</p>
+        `;
+      } catch (error) {
+        // Show error message
+        weatherDiv.innerHTML = '';
+        errorDiv.textContent = error.message;
+      }
+    }
+  </script>
+</body>
+</html>
